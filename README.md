@@ -5,7 +5,7 @@ Description will be added
 ## To-Do's
 
 - [x] Dockerfile
-- [ ] Migrate DB to deta.sh bases
+- [x] Migrate DB to deta.sh bases [please check deta branch]
 - [ ] Add more neatsheet
 - [ ] Write readme.md
 - [ ] Add neatsheet tag feature
