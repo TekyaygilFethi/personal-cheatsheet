@@ -30,7 +30,7 @@ def delete_record_from_db(id_key):
 tab1, tab2, tab3 = st.tabs(["Submit", "List", "Edit"])
 
 with tab1:
-    st.title("👋 Welcome to SheatCheet")
+    st.title("👋 Welcome to NeatSheets")
     st.caption(
         "📘 SheatCheet is a reminder for developers and a place to take note of shortcodes."
     )
@@ -87,7 +87,7 @@ with tab3:
     with st.form("edit_form", clear_on_submit=True):
         st.text_input("New Type", selected_row["type"].values[0])
         st.text_input("New Description", selected_row["desc"].values[0])
-        st.text_input("New Command", selected_row["cmd"].values[0])
+        st.text_area("New Command", selected_row["cmd"].values[0])
         update = st.form_submit_button("Update")
         if update:
             st.success("Done!")
