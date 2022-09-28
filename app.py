@@ -1,9 +1,11 @@
 import streamlit as st
 from tinydb import TinyDB, Query
 import pandas as pd
+from redis_manager import RedisManager
+import json
 
 db = TinyDB("db.json")
-
+redis_manager = RedisManager()
 
 def insert_db(payload):
     db.insert(payload)
@@ -16,14 +18,33 @@ def load_db():
 def get_random():
     return load_db().sample()
 
+def __queryByDesc(desc):
+    row = Query()
+    return db.search(row.desc == desc)[0]
+
+def __queryById(docid):
+    row = Query()
+    return db.search(row.docid == docid)[0]
+
 
 def find_doc_id_from_db(desc):
-    row = Query()
-    found = db.search(row.desc == desc)[0]
+    desc_cache_key = f"desc_{desc.replace(' ','_')}_docid"
+    result = redis_manager.Get(desc_cache_key)
+    if result is not None:
+        return result
+
+    found = __queryByDesc(desc)
+    redis_manager.Set(desc_cache_key, found.docid)
+
     return found.doc_id
 
 
 def delete_record_from_db(id_key):
+    found = __queryById(id_key)
+    
+    desc_cache_key = f"desc_{found.desc.replace(' ','_')}_docid"
+    redis_manager.Delete(desc_cache_key)
+
     db.remove(doc_ids=[id_key])
 
 
