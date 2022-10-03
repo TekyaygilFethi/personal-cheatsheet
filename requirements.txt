@@ -2,4 +2,4 @@ pandas
 tinydb
 streamlit
 redis
-dotenv
+python-dotenv

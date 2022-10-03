@@ -1,19 +1,30 @@
 import streamlit as st
-from tinydb import TinyDB, Query
+from tinydb import TinyDB, Query, where
 import pandas as pd
 from redis_manager import RedisManager
 import json
+import ptvsd
+
+""
+print("Waiting for debugger attach")
+
+ptvsd.enable_attach(address=("localhost", 5678), redirect_output=False)
+
+ptvsd.wait_for_attach()
 
 db = TinyDB("db.json")
 redis_manager = RedisManager()
 
 def insert_db(payload):
     db.insert(payload)
+    __refreshDbCache()
 
+def __refreshDbCache():
+    db_data = db.all()
+    redis_manager.Set("alldb", json.dumps(db_data))
 
 def load_db():
     return pd.DataFrame(db.all())
-
 
 def get_random():
     return load_db().sample()
@@ -22,29 +33,21 @@ def __queryByDesc(desc):
     row = Query()
     return db.search(row.desc == desc)[0]
 
-def __queryById(docid):
-    row = Query()
-    return db.search(row.docid == docid)[0]
-
-
 def find_doc_id_from_db(desc):
     desc_cache_key = f"desc_{desc.replace(' ','_')}_docid"
     result = redis_manager.Get(desc_cache_key)
+
     if result is not None:
         return result
 
     found = __queryByDesc(desc)
-    redis_manager.Set(desc_cache_key, found.docid)
+    print("Resultquery",found.doc_id)
+    redis_manager.Set(desc_cache_key, found.doc_id)
 
     return found.doc_id
 
 
 def delete_record_from_db(id_key):
-    found = __queryById(id_key)
-    
-    desc_cache_key = f"desc_{found.desc.replace(' ','_')}_docid"
-    redis_manager.Delete(desc_cache_key)
-
     db.remove(doc_ids=[id_key])
 
 
