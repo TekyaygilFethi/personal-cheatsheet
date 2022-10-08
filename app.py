@@ -3,14 +3,7 @@ from tinydb import TinyDB, Query, where
 import pandas as pd
 from redis_manager import RedisManager
 import json
-import ptvsd
 
-""
-print("Waiting for debugger attach")
-
-ptvsd.enable_attach(address=("localhost", 5678), redirect_output=False)
-
-ptvsd.wait_for_attach()
 
 db = TinyDB("db.json")
 redis_manager = RedisManager()
@@ -27,7 +20,10 @@ def load_db():
     return pd.DataFrame(db.all())
 
 def get_random():
-    return load_db().sample()
+    all_db_json = redis_manager.Get("alldb")
+
+    all_db = pd.json_normalize(json.loads(all_db_json))
+    return all_db.sample()
 
 def __queryByDesc(desc):
     row = Query()
@@ -49,6 +45,7 @@ def find_doc_id_from_db(desc):
 
 def delete_record_from_db(id_key):
     db.remove(doc_ids=[id_key])
+    __refreshDbCache()
 
 
 tab1, tab2, tab3 = st.tabs(["Submit", "List", "Edit"])
@@ -123,4 +120,5 @@ with tab3:
             if st.button("Delete"):
                 doc_id = find_doc_id_from_db(selected_row["desc"].values[0])
                 delete_record_from_db(doc_id)
+                redis_manager.Delete(f"desc_{selected_row['desc'].values[0].replace(' ','_')}_docid")
                 st.info("Deleted!", icon="🔥")
